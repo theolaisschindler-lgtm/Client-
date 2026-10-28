@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "amethyst",
+  "version": "${version}",
+  "name": "Amethyst",
+  "description": "A violet client dashboard with customizable storage and spawner outlines.",
+  "authors": ["Amethyst contributors"],
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": { "client": ["dev.amethyst.client.AmethystClient"] },
+  "depends": {
+    "fabricloader": ">=0.18.2",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": ">=0.141.6+1.21.11"
+  }
+}
