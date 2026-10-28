@@ -3,7 +3,7 @@ package dev.amethyst.client.config;
 import java.util.EnumMap;
 import java.util.EnumSet;
 
-public final class ModuleSettings {
+public class ModuleSettings {
     public boolean enabled = false;
     public boolean throughWalls = true;
     public boolean rainbow = false;
@@ -42,6 +42,6 @@ public final class ModuleSettings {
         }
         if (targets == null) targets = spawnerModule ? spawnerDefaults().targets : storageDefaults().targets;
         if (spawnerModule) targets.retainAll(EnumSet.of(TargetType.SPAWNER));
-        else targets.remove(TargetType.SPAWNER);
+        else targets.retainAll(EnumSet.of(TargetType.CHEST, TargetType.HOPPER, TargetType.SHULKER, TargetType.BARREL));
     }
 }

@@ -27,6 +27,7 @@ public final class ClickGuiScreen extends Screen {
     private final ModConfig config = AmethystClient.config();
     private final List<Hit> hits = new ArrayList<>();
     private boolean storageSelected = true;
+    private boolean chunkSelected;
     private boolean appearance;
     private TargetType selectedColor = TargetType.CHEST;
     private Hit dragging;
@@ -63,8 +64,8 @@ public final class ClickGuiScreen extends Screen {
         int available = w - side - 30;
         text(g, appearance ? "Appearance" : "Visuals", left, y + 18, TEXT);
         if (available > 280) text(g, appearance ? "Make your client feel like you." : "A little clarity. A different perspective.", left, y + 33, MUTED);
-        int enabled = (config.storage.enabled ? 1 : 0) + (config.spawners.enabled ? 1 : 0);
-        if (available > 360) pill(g, left + available - 108, y + 15, 80, 18, enabled + " / 2 active", 0xFF24202F, accent());
+        int enabled = (config.storage.enabled ? 1 : 0) + (config.spawners.enabled ? 1 : 0) + (config.chunks.enabled ? 1 : 0);
+        if (available > 360) pill(g, left + available - 108, y + 15, 80, 18, enabled + " / 3 active", 0xFF24202F, accent());
         button(g, x + w - 28, y + 11, 20, 20, "×", this::onClose, false);
         g.fill(left, y + 52, left + available, y + 53, BORDER);
 
@@ -75,27 +76,28 @@ public final class ClickGuiScreen extends Screen {
             viewportH = h - 88;
             settingsViewport(g, true);
         } else {
-            boolean columns = available >= 500;
+            boolean columns = available >= 500 && h >= 330;
             int listW = columns ? 200 : available;
             if (columns) {
                 text(g, "MODULES", left, y + 65, MUTED);
-                text(g, "02", left + listW - 13, y + 65, MUTED);
-                moduleCard(g, left, y + 85, listW, true);
-                moduleCard(g, left, y + 207, listW, false);
-                if (h > 420) {
-                    round(g, left, y + h - 96, listW, 56, 5, 0xFF17151E);
-                    text(g, "LOCAL & CLIENT-SIDE", left + 10, y + h - 84, accent());
-                    text(g, "Only loaded chunks are scanned.", left + 10, y + h - 67, MUTED);
-                    text(g, "No server installation required.", left + 10, y + h - 54, MUTED);
+                text(g, "03", left + listW - 13, y + 65, MUTED);
+                int cardHeight = Math.clamp((h - 135) / 3, 64, 110);
+                moduleCard(g, left, y + 85, listW, cardHeight, 0);
+                moduleCard(g, left, y + 85 + cardHeight + 8, listW, cardHeight, 1);
+                moduleCard(g, left, y + 85 + 2 * (cardHeight + 8), listW, cardHeight, 2);
+                if (h > 500) {
+                    text(g, "LOCAL & CLIENT-SIDE", left + 10, y + h - 58, accent());
+                    text(g, "Only loaded chunks are scanned.", left + 10, y + h - 41, MUTED);
                 }
                 viewportX = left + listW + 14;
                 viewportY = y + 64;
                 viewportW = available - listW - 14;
                 viewportH = h - 88;
             } else {
-                int tabWidth = (available - 6) / 2;
-                button(g, left, y + 62, tabWidth, 25, "Storage ESP", () -> selectModule(true), storageSelected);
-                button(g, left + tabWidth + 6, y + 62, tabWidth, 25, "Spawner Finder", () -> selectModule(false), !storageSelected);
+                int tabWidth = (available - 12) / 3;
+                button(g, left, y + 62, tabWidth, 25, "Storage", () -> selectModule(true), !chunkSelected && storageSelected);
+                button(g, left + tabWidth + 6, y + 62, tabWidth, 25, "Spawners", () -> selectModule(false), !chunkSelected && !storageSelected);
+                button(g, left + 2 * (tabWidth + 6), y + 62, tabWidth, 25, "Chunks", this::selectChunks, chunkSelected);
                 viewportX = left;
                 viewportY = y + 97;
                 viewportW = available;
@@ -116,7 +118,7 @@ public final class ClickGuiScreen extends Screen {
         diamond(g, x + 21, y + 24, 5, accent());
         if (!compact) {
             text(g, "AMETHYST", x + 39, y + 16, TEXT);
-            text(g, "Visual client / 1.0", x + 39, y + 28, MUTED);
+            text(g, "Visual client / 1.1", x + 39, y + 28, MUTED);
             if (h >= 230) text(g, "WORKSPACE", x + 13, y + 63, 0xFF625B70);
         }
         int navY = h < 230 ? 55 : 85;
@@ -143,26 +145,47 @@ public final class ClickGuiScreen extends Screen {
         hit(x, y, w, 27, () -> { appearance = isAppearance; scroll = 0; focused = -1; });
     }
 
-    private void moduleCard(GuiGraphics g, int x, int y, int w, boolean storage) {
-        ModuleSettings module = storage ? config.storage : config.spawners;
-        boolean selected = storageSelected == storage;
-        round(g, x, y, w, 110, 6, selected ? 0xFF221C30 : CARD);
-        if (selected) outline(g, x, y, w, 110, 0xFF57416E);
+    private void moduleCard(GuiGraphics g, int x, int y, int w, int h, int index) {
+        ModuleSettings module = index == 0 ? config.storage : index == 1 ? config.spawners : config.chunks;
+        boolean selected = index == 2 ? chunkSelected : !chunkSelected && storageSelected == (index == 0);
+        String name = index == 0 ? "Storage ESP" : index == 1 ? "Spawner Finder" : "Chunk Finder";
+        String category = index == 0 ? "WORLD / STORAGE" : index == 1 ? "WORLD / DISCOVERY" : "WORLD / CHUNKS";
+        String description = index == 0 ? "Your supplies, in plain sight." : index == 1 ? "Find what lies underneath." : "Geodes & activity clues.";
+        round(g, x, y, w, h, 6, selected ? 0xFF221C30 : hover(x, y, w, h) ? 0xFF201C2A : CARD);
+        if (selected) {
+            outline(g, x, y, w, h, 0xFF57416E);
+            g.fill(x, y + 11, x + 2, y + h - 11, accent());
+        }
         round(g, x + 12, y + 12, 26, 26, 5, 0xFF332642);
-        boxIcon(g, x + 17, y + 18, 15, accent());
-        text(g, storage ? "Storage ESP" : "Spawner Finder", x + 47, y + 17, TEXT);
-        text(g, storage ? "WORLD / STORAGE" : "WORLD / DISCOVERY", x + 12, y + 51, MUTED);
-        text(g, storage ? "Your supplies, in plain sight." : "Find what lies underneath.", x + 12, y + 66, 0xFFB0A8BC);
-        pill(g, x + 12, y + 85, 47, 14, module.enabled ? "ENABLED" : "DISABLED", 0xFF16121F, module.enabled ? accent() : MUTED);
-        text(g, "Configure  ›", x + w - 74, y + 89, selected ? accent() : MUTED);
-        hit(x, y, w, 110, () -> selectModule(storage));
+        if (index == 2) {
+            diamond(g, x + 25, y + 25, 6, accent());
+            outline(g, x + 16, y + 16, 18, 18, 0xFF66537D);
+        } else boxIcon(g, x + 17, y + 18, 15, accent());
+        text(g, name, x + 47, y + 17, TEXT);
+        if (h >= 90) text(g, category, x + 12, y + 49, MUTED);
+        if (h >= 105) text(g, description, x + 12, y + 65, 0xFFB0A8BC);
+        pill(g, x + 12, y + h - 25, 52, 14, module.enabled ? "ENABLED" : "DISABLED", 0xFF16121F, module.enabled ? accent() : MUTED);
+        text(g, "Configure  ›", x + w - 74, y + h - 21, selected ? accent() : MUTED);
+        hit(x, y, w, h, () -> { if (index == 2) selectChunks(); else selectModule(index == 0); });
         toggle(g, x + w - 38, y + 15, module.enabled, () -> module.enabled = !module.enabled, false);
     }
 
     private void selectModule(boolean storage) {
+        chunkSelected = false;
         storageSelected = storage;
         selectedColor = storage ? TargetType.CHEST : TargetType.SPAWNER;
         scroll = 0;
+        maxScroll = 0;
+        dragging = null;
+        focused = -1;
+    }
+
+    private void selectChunks() {
+        chunkSelected = true;
+        selectedColor = TargetType.GEODE;
+        scroll = 0;
+        maxScroll = 0;
+        dragging = null;
         focused = -1;
     }
 
@@ -182,18 +205,28 @@ public final class ClickGuiScreen extends Screen {
     }
 
     private int moduleSettings(GuiGraphics g, int x, int y, int w) {
-        ModuleSettings module = storageSelected ? config.storage : config.spawners;
+        ModuleSettings module = chunkSelected ? config.chunks : storageSelected ? config.storage : config.spawners;
         text(g, "MODULE SETTINGS", x, y + 2, MUTED);
-        text(g, storageSelected ? "Storage ESP" : "Spawner Finder", x, y + 22, TEXT);
+        text(g, chunkSelected ? "Chunk Finder" : storageSelected ? "Storage ESP" : "Spawner Finder", x, y + 22, TEXT);
         toggle(g, x + w - 28, y + 18, module.enabled, () -> module.enabled = !module.enabled, true);
-        text(g, storageSelected ? "Outline the things you keep." : "Reveal nearby monster spawners.", x, y + 38, MUTED);
+        text(g, chunkSelected ? "Geodes & possible activity clues." : storageSelected ? "Outline the things you keep." : "Reveal nearby monster spawners.", x, y + 38, MUTED);
         int yy = y + 61;
+        if (chunkSelected) {
+            yy = section(g, "CHUNK SCANNING", x, yy, w);
+            yy = slider(g, x, yy, w, "Sensitivity", config.chunks.sensitivity + "%", config.chunks.sensitivity, 1, 100, v -> config.chunks.sensitivity = (int) Math.round(v));
+            yy = paragraph(g, "Higher sensitivity accepts weaker clues and may produce more false positives.", x, yy, w, MUTED);
+            yy = slider(g, x, yy, w, "Simulation distance", config.chunks.simulationDistance + " chunks", config.chunks.simulationDistance, 1, 16, v -> config.chunks.simulationDistance = (int) Math.round(v));
+            yy = paragraph(g, "Scan radius in loaded chunks. Does not change the server's simulation distance.", x, yy, w, MUTED);
+            yy = paragraph(g, "Natural geodes are separate from possible activity clues. Neither proves a player was here.", x, yy, w, MUTED);
+            yy = paragraph(g, "Outlines mark candidate chunk sections.", x, yy, w, MUTED);
+            yy = paragraph(g, AmethystClient.chunkStatus(), x, yy, w, MUTED) + 6;
+        }
         yy = section(g, "RENDERING", x, yy, w);
         yy = switchRow(g, x, yy, w, "Through walls", module.throughWalls, () -> module.throughWalls = !module.throughWalls);
         yy = switchRow(g, x, yy, w, "Rainbow colors", module.rainbow, () -> module.rainbow = !module.rainbow);
         yy = switchRow(g, x, yy, w, "Pulse opacity", module.pulse, () -> module.pulse = !module.pulse);
         yy += 5;
-        yy = slider(g, x, yy, w, "Render distance", module.range + " blocks", module.range, 16, 256, value -> module.range = (int) Math.round(value));
+        if (!chunkSelected) yy = slider(g, x, yy, w, "Render distance", module.range + " blocks", module.range, 16, 256, value -> module.range = (int) Math.round(value));
         yy = slider(g, x, yy, w, "Outline opacity", Math.round(module.opacity * 100) + "%", module.opacity, 0.05, 1, value -> module.opacity = (float) value);
         yy = slider(g, x, yy, w, "Outline width", String.format(Locale.ROOT, "%.1f px", module.lineWidth), module.lineWidth, 1, 5, value -> module.lineWidth = (float) (Math.round(value * 4) / 4.0));
         yy += 8;
@@ -201,7 +234,7 @@ public final class ClickGuiScreen extends Screen {
         text(g, "Toggle a target. Click its color to edit.", x, yy, MUTED);
         yy += 19;
         for (TargetType type : TargetType.values()) {
-            if ((type == TargetType.SPAWNER) == storageSelected) continue;
+            if (config.module(type) != module) continue;
             boolean enabled = module.targets.contains(type);
             round(g, x, yy, w, 26, 4, selectedColor == type ? 0xFF292132 : CARD);
             round(g, x + 8, yy + 7, 12, 12, 3, enabled ? accent() : 0xFF34303D);
@@ -285,7 +318,9 @@ public final class ClickGuiScreen extends Screen {
         int[][] colors = {{0xB497FF, 0xDAB0FF, 0x80C8FF, 0xF49FE0, 0xFF6F98},
                 {0x78D9F5, 0xA2F1DD, 0x8BAEFA, 0xD2B2FF, 0x56E5E2},
                 {0xFFC078, 0xF0A267, 0xFF8585, 0xE48FCD, 0xFF637E}};
-        for (TargetType type : TargetType.values()) module.colors.put(type, colors[palette][type.ordinal()]);
+        for (TargetType type : TargetType.values()) {
+            if (config.module(type) == module) module.colors.put(type, colors[palette][type.ordinal() % colors[palette].length]);
+        }
     }
 
     private int section(GuiGraphics g, String label, int x, int y, int w) {
@@ -315,7 +350,9 @@ public final class ClickGuiScreen extends Screen {
         round(g, x, trackY, Math.max(2, fill), 3, 1, accent());
         circle(g, x + fill + 2, trackY + 1, 4, 0xFFE5DAFF);
         if (trackY >= viewportY && trackY + 3 < viewportY + viewportH) {
-            hits.add(new Hit(x, trackY - 6, w, 15, null, consumer, min, max, value));
+            int hitY = Math.max(trackY - 6, viewportY);
+            int hitBottom = Math.min(trackY + 9, viewportY + viewportH);
+            hits.add(new Hit(x, hitY, w, hitBottom - hitY, null, consumer, min, max, value));
         }
         return y + 37;
     }
@@ -411,8 +448,7 @@ public final class ClickGuiScreen extends Screen {
                 return true;
             }
             if (hit.slider != null && (event.key() == GLFW.GLFW_KEY_LEFT || event.key() == GLFW.GLFW_KEY_RIGHT)) {
-                double step = (hit.max - hit.min) / 100.0;
-                if (hit.max == 255 || hit.max == 256) step = 1;
+                double step = hit.max == 5 ? 0.25 : hit.max >= 16 ? 1 : 0.01;
                 hit.slider.accept(Math.max(hit.min, Math.min(hit.max, hit.value + (event.key() == GLFW.GLFW_KEY_RIGHT ? step : -step))));
                 return true;
             }
@@ -432,6 +468,14 @@ public final class ClickGuiScreen extends Screen {
     private int accent() { return 0xFF000000 | (config.accent & 0xFFFFFF); }
     private boolean hover(int x, int y, int w, int h) { return mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h; }
     private void text(GuiGraphics g, String text, int x, int y, int color) { g.drawString(font, text, x, y, color, false); }
+    private int paragraph(GuiGraphics g, String value, int x, int y, int width, int color) {
+        for (var line : font.split(Component.literal(value), Math.max(40, width))) {
+            g.drawString(font, line, x, y, color, false);
+            y += 12;
+        }
+        return y + 5;
+    }
+
     private void rightText(GuiGraphics g, String text, int x, int y, int color) { text(g, text, x - font.width(text), y, color); }
 
     private static void round(GuiGraphics g, int x, int y, int w, int h, int radius, int color) {

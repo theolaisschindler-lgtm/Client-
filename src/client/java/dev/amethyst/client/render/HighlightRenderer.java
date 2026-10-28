@@ -11,6 +11,7 @@ import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.MeshData;
 import dev.amethyst.client.AmethystClient;
 import dev.amethyst.client.config.ModConfig;
+import dev.amethyst.client.config.ChunkFinderSettings;
 import dev.amethyst.client.config.ModuleSettings;
 import dev.amethyst.client.scan.Highlight;
 import java.util.ArrayList;
@@ -83,13 +84,18 @@ public final class HighlightRenderer implements AutoCloseable {
             double x = highlight.pos().getX() - camera.x;
             double y = highlight.pos().getY() - camera.y;
             double z = highlight.pos().getZ() - camera.z;
-            double distance = Math.sqrt((x + 0.5) * (x + 0.5) + (y + 0.5) * (y + 0.5) + (z + 0.5) * (z + 0.5));
-            if (distance > module.range) continue;
+            double cx = x + highlight.width() * 0.5;
+            double cy = y + highlight.height() * 0.5;
+            double cz = z + highlight.depth() * 0.5;
+            double distance = Math.sqrt(cx * cx + cy * cy + cz * cz);
+            // Chunk Finder already bounds its loaded-chunk square by simulationDistance.
+            if (!(module instanceof ChunkFinderSettings) && distance > module.range) continue;
             // Small quad prisms keep thickness adjustable without depending on driver line-width limits.
             float thickness = (float) Math.clamp(distance * pixelScale * module.lineWidth, 0.002, 0.05);
             float alpha = module.opacity * (module.pulse ? pulse : 1.0f);
             int color = (Math.clamp(Math.round(alpha * 255), 0, 255) << 24) | config.color(highlight.type());
-            outlines.add(new Outline((float) x, (float) y, (float) z, thickness, color, module.throughWalls));
+            outlines.add(new Outline((float) x, (float) y, (float) z, highlight.width(), highlight.height(),
+                    highlight.depth(), thickness, color, module.throughWalls));
         }
         // Drawing consumes only immutable frame data, with no retained world or block-entity references.
         frame = List.copyOf(outlines);
@@ -142,23 +148,24 @@ public final class HighlightRenderer implements AutoCloseable {
     }
 
     private static void addOutline(BufferBuilder buffer, Matrix4fc pose, Outline o) {
-        float a = -0.003f, b = 1.003f, t = o.thickness;
+        float a = -0.003f, bx = o.width + 0.003f, by = o.height + 0.003f,
+                bz = o.depth + 0.003f, t = o.thickness;
         for (int yi = 0; yi < 2; yi++) {
-            float y = yi == 0 ? a : b;
+            float y = yi == 0 ? a : by;
             for (int zi = 0; zi < 2; zi++) {
-                float z = zi == 0 ? a : b;
-                box(buffer, pose, o, a - t, y - t, z - t, b + t, y + t, z + t);
+                float z = zi == 0 ? a : bz;
+                box(buffer, pose, o, a - t, y - t, z - t, bx + t, y + t, z + t);
             }
         }
         for (int xi = 0; xi < 2; xi++) {
-            float x = xi == 0 ? a : b;
+            float x = xi == 0 ? a : bx;
             for (int zi = 0; zi < 2; zi++) {
-                float z = zi == 0 ? a : b;
-                box(buffer, pose, o, x - t, a - t, z - t, x + t, b + t, z + t);
+                float z = zi == 0 ? a : bz;
+                box(buffer, pose, o, x - t, a - t, z - t, x + t, by + t, z + t);
             }
             for (int yi = 0; yi < 2; yi++) {
-                float y = yi == 0 ? a : b;
-                box(buffer, pose, o, x - t, y - t, a - t, x + t, y + t, b + t);
+                float y = yi == 0 ? a : by;
+                box(buffer, pose, o, x - t, y - t, a - t, x + t, y + t, bz + t);
             }
         }
     }
@@ -187,5 +194,6 @@ public final class HighlightRenderer implements AutoCloseable {
         }
     }
 
-    private record Outline(float x, float y, float z, float thickness, int color, boolean throughWalls) { }
+    private record Outline(float x, float y, float z, int width, int height, int depth,
+                           float thickness, int color, boolean throughWalls) { }
 }

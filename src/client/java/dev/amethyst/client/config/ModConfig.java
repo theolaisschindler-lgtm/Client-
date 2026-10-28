@@ -16,6 +16,7 @@ public final class ModConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     public ModuleSettings storage = ModuleSettings.storageDefaults();
     public ModuleSettings spawners = ModuleSettings.spawnerDefaults();
+    public ChunkFinderSettings chunks = new ChunkFinderSettings();
     public int accent = 0x9B7CFF;
     private transient Path path;
 
@@ -39,10 +40,18 @@ public final class ModConfig {
         if (spawners == null) spawners = ModuleSettings.spawnerDefaults();
         storage.sanitize(false);
         spawners.sanitize(true);
+        if (chunks == null) chunks = new ChunkFinderSettings();
+        chunks.sanitize();
         accent &= 0xFFFFFF;
     }
 
-    public ModuleSettings module(TargetType type) { return type == TargetType.SPAWNER ? spawners : storage; }
+    public ModuleSettings module(TargetType type) {
+        return switch (type) {
+            case GEODE, ACTIVITY -> chunks;
+            case SPAWNER -> spawners;
+            default -> storage;
+        };
+    }
 
     public int color(TargetType type) {
         ModuleSettings module = module(type);

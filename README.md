@@ -6,12 +6,23 @@ A Fabric **client mod for Minecraft Java 1.21.11** with a dark, violet click GUI
 
 - **Storage ESP:** configurable outlines for chests (including trapped and ender chests), hoppers, and shulker boxes. Barrels can be enabled separately.
 - **Spawner Finder:** configurable outlines for spawners in loaded chunks.
+- **Chunk Finder:** surveys loaded chunks for amethyst/calcite geode candidates and combinations of possible activity clues. Outlines mark the 16×16×16 chunk section containing a representative clue. Geodes and activity use separate configurable colors.
 - Individual target colors, RGB controls, opacity, distance (16–256 blocks), line width (1–5), through-wall rendering, rainbow colors, and pulsing outlines.
 - Settings persist in `config/amethyst.json` inside your Minecraft instance.
 
 Press **Right Shift** in-game to open the GUI. The binding can be changed under **Options → Controls → Key Binds**. Enable a module, select the block types you want, and adjust its appearance in the settings panel. Close the GUI to save your changes.
 
 The mod reads blocks the client already knows about. It does not load distant chunks, search world seeds, or discover blocks the server has withheld. Use it only where the server's rules allow it.
+
+### Chunk Finder
+
+Select **Visuals → Chunk Finder** and enable the module. It starts disabled, so upgrading from 1.0.0 preserves your existing module choices.
+
+- **Sensitivity (1–100):** higher values lower the evidence threshold. Activity requires at least two different clue categories: torches, crafting tables, beds, or redstone wiring/components. Geode candidates require amethyst plus calcite. A geode alone never counts as player activity.
+- **Simulation distance (1–16 chunks):** the radius of the square survey around your current chunk. This is a client scan limit; it does not change Minecraft's or a server's actual simulation/view distance. Only chunks the client already has can be inspected.
+- **Geodes / Activity clues:** independent target switches and RGB colors, plus the existing opacity, width, through-wall, rainbow, and pulse options.
+
+Surveying is incremental, so signals can take time to appear and update, especially at larger distances. The inspector shows survey progress. Natural structures, including villages, can match the activity heuristics; a candidate is not proof of a player base. The scan does not detect chunk age, ownership, or players themselves.
 
 ## Install
 
@@ -49,7 +60,7 @@ To start the development client on a machine with a graphical display:
 ./gradlew runClient
 ```
 
-The development client uses a separate `run/` instance. A successful build does not establish in-game rendering compatibility: check the GUI and both modules in Minecraft using the steps below. Launching a playable client requires a display and downloaded Minecraft assets; multiplayer authentication may require a normal authenticated launcher session.
+The development client uses a separate `run/` instance. A successful build does not establish in-game rendering compatibility: check the GUI and all modules in Minecraft using the steps below. Launching a playable client requires a display and downloaded Minecraft assets; multiplayer authentication may require a normal authenticated launcher session.
 
 ## In-game verification
 
@@ -58,6 +69,8 @@ The development client uses a separate `run/` instance. A successful build does 
 3. Enable Spawner Finder and confirm the spawner uses its own color.
 4. Change individual colors, opacity, line width, distance, rainbow, pulse, and through-wall rendering. Check the result both in front of and behind a wall.
 5. Close and reopen the GUI, then restart the client, to confirm settings persist. Break a highlighted block and leave the area to check stale outlines disappear.
+6. Enable Chunk Finder. In separate chunks place an amethyst/calcite cluster, torches alone, and a combination of torches, crafting tables, beds, and redstone. Wait for the survey; confirm the geode and activity categories have distinct section outlines and lone torches do not count as activity.
+7. Compare sensitivity1 and100 with a weak combination (one torch and one crafting table). Change simulation distance, disable each target, unload a candidate chunk, and change dimensions; confirm old outlines clear. Check the controls and persistence in both wide and compact GUI layouts.
 
 ## Cloud network requirements
 
