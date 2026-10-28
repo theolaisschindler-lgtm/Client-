@@ -13,6 +13,7 @@ import dev.amethyst.client.AmethystClient;
 import dev.amethyst.client.config.ModConfig;
 import dev.amethyst.client.config.ChunkFinderSettings;
 import dev.amethyst.client.config.ModuleSettings;
+import dev.amethyst.client.config.TargetType;
 import dev.amethyst.client.scan.Highlight;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +30,8 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.joml.Vector3f;
@@ -97,8 +100,54 @@ public final class HighlightRenderer implements AutoCloseable {
             outlines.add(new Outline((float) x, (float) y, (float) z, highlight.width(), highlight.height(),
                     highlight.depth(), thickness, color, module.throughWalls));
         }
+        extractPlayers(context, client, config, camera, pixelScale, pulse, outlines);
+        extractCrystals(context, client, config, camera, pixelScale, pulse, outlines);
         // Drawing consumes only immutable frame data, with no retained world or block-entity references.
         frame = List.copyOf(outlines);
+    }
+
+    private void extractPlayers(WorldExtractionContext context, Minecraft client, ModConfig config,
+                                Vec3 camera, double pixelScale, float pulse, List<Outline> outlines) {
+        var settings = config.players;
+        if (!settings.enabled) return;
+        float partialTick = context.tickCounter().getGameTimeDeltaPartialTick(false);
+        for (var player : client.level.players()) {
+            if (player.isRemoved()) continue;
+            AABB box = PlayerEspGeometry.interpolatedBox(player.getBoundingBox(), player.position(),
+                    player.getPosition(partialTick));
+            double distanceSquared = box.getCenter().distanceToSqr(camera);
+            if (!settings.canHighlight(player == client.player, player.isAlive(), player.isSpectator(),
+                    player.isInvisibleTo(client.player), distanceSquared)) continue;
+            int rgb = config.color(TargetType.PLAYER);
+            if (settings.teamColors && !settings.rainbow && player.getTeam() != null
+                    && player.getTeam().getColor().getColor() != null) rgb = player.getTeamColor() & 0xFFFFFF;
+            float alpha = settings.opacity * (settings.pulse ? pulse : 1.0f);
+            int color = (Math.clamp(Math.round(alpha * 255), 0, 255) << 24) | rgb;
+            float thickness = (float) Math.clamp(Math.sqrt(distanceSquared) * pixelScale * settings.lineWidth, 0.002, 0.05);
+            outlines.add(new Outline((float) (box.minX - camera.x), (float) (box.minY - camera.y),
+                    (float) (box.minZ - camera.z), (float) box.getXsize(), (float) box.getYsize(),
+                    (float) box.getZsize(), thickness, color, settings.throughWalls));
+        }
+    }
+
+    private void extractCrystals(WorldExtractionContext context, Minecraft client, ModConfig config,
+                                 Vec3 camera, double pixelScale, float pulse, List<Outline> outlines) {
+        var settings = config.crystals;
+        if (!settings.enabled || !settings.targets.contains(TargetType.END_CRYSTAL)) return;
+        float partialTick = context.tickCounter().getGameTimeDeltaPartialTick(false);
+        for (var entity : client.level.entitiesForRendering()) {
+            if (!(entity instanceof EndCrystal crystal) || crystal.isRemoved() || !crystal.isAlive()) continue;
+            AABB box = PlayerEspGeometry.interpolatedBox(crystal.getBoundingBox(), crystal.position(),
+                    crystal.getPosition(partialTick));
+            double distanceSquared = box.getCenter().distanceToSqr(camera);
+            if (distanceSquared > (double) settings.range * settings.range) continue;
+            float alpha = settings.opacity * (settings.pulse ? pulse : 1.0f);
+            int color = (Math.clamp(Math.round(alpha * 255), 0, 255) << 24) | config.color(TargetType.END_CRYSTAL);
+            float thickness = (float) Math.clamp(Math.sqrt(distanceSquared) * pixelScale * settings.lineWidth, 0.002, 0.05);
+            outlines.add(new Outline((float) (box.minX - camera.x), (float) (box.minY - camera.y),
+                    (float) (box.minZ - camera.z), (float) box.getXsize(), (float) box.getYsize(),
+                    (float) box.getZsize(), thickness, color, settings.throughWalls));
+        }
     }
 
     private void render(WorldRenderContext context) {
@@ -194,6 +243,6 @@ public final class HighlightRenderer implements AutoCloseable {
         }
     }
 
-    private record Outline(float x, float y, float z, int width, int height, int depth,
+    private record Outline(float x, float y, float z, float width, float height, float depth,
                            float thickness, int color, boolean throughWalls) { }
 }

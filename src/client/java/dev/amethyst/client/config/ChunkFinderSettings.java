@@ -5,6 +5,8 @@ import java.util.EnumSet;
 public final class ChunkFinderSettings extends ModuleSettings {
     public int sensitivity = 50;
     public int simulationDistance = 6;
+    public boolean alertSound = true;
+    public double alertVolume = 0.6;
 
     public ChunkFinderSettings() {
         targets = EnumSet.of(TargetType.GEODE, TargetType.ACTIVITY);
@@ -19,6 +21,7 @@ public final class ChunkFinderSettings extends ModuleSettings {
         targets = selected;
         sensitivity = Math.clamp(sensitivity, 1, 100);
         simulationDistance = Math.clamp(simulationDistance, 1, 16);
+        alertVolume = Double.isFinite(alertVolume) ? Math.clamp(alertVolume, 0.0, 1.0) : 0.6;
         range = 256;
     }
 

@@ -19,6 +19,21 @@ public final class ModConfig {
     public ChunkFinderSettings chunks = new ChunkFinderSettings();
     public FreecamSettings freecam = new FreecamSettings();
     public GuiEffectSettings guiEffects = new GuiEffectSettings();
+    public OreEspSettings ores = new OreEspSettings();
+    public PlayerEspSettings players = new PlayerEspSettings();
+    public AutoCrystalSettings autoCrystal = new AutoCrystalSettings();
+    public CrystalEspSettings crystals = new CrystalEspSettings();
+    public TotemWarningSettings totemWarning = new TotemWarningSettings();
+    public AutoTotemSettings autoTotem = new AutoTotemSettings();
+    public SafeAnchorSettings safeAnchor = new SafeAnchorSettings();
+    public CrystalAuraSettings crystalAura = new CrystalAuraSettings();
+    public AnchorMacroSettings anchorMacro = new AnchorMacroSettings();
+    public TriggerBotSettings triggerBot = new TriggerBotSettings();
+    public WTapSettings wTap = new WTapSettings();
+    public ShieldBreakSettings shieldBreak = new ShieldBreakSettings();
+    public SilentAimSettings silentAim = new SilentAimSettings();
+    public AimAssistSettings aimAssist = new AimAssistSettings();
+    public AutoMaceSettings autoMace = new AutoMaceSettings();
     public int accent = 0x9B7CFF;
     private transient Path path;
 
@@ -48,6 +63,35 @@ public final class ModConfig {
         freecam.sanitize();
         if (guiEffects == null) guiEffects = new GuiEffectSettings();
         guiEffects.sanitize();
+        if (ores == null) ores = new OreEspSettings();
+        ores.sanitize();
+        if (players == null) players = new PlayerEspSettings();
+        players.sanitize();
+        if (autoCrystal == null) autoCrystal = new AutoCrystalSettings();
+        autoCrystal.sanitize();
+        if (crystals == null) crystals = new CrystalEspSettings();
+        crystals.sanitize();
+        if (totemWarning == null) totemWarning = new TotemWarningSettings();
+        totemWarning.sanitize();
+        if (autoTotem == null) autoTotem = new AutoTotemSettings();
+        autoTotem.sanitize();
+        if (safeAnchor == null) safeAnchor = new SafeAnchorSettings();
+        if (crystalAura == null) crystalAura = new CrystalAuraSettings();
+        crystalAura.sanitize();
+        if (anchorMacro == null) anchorMacro = new AnchorMacroSettings();
+        anchorMacro.sanitize();
+        if (triggerBot == null) triggerBot = new TriggerBotSettings();
+        triggerBot.sanitize();
+        if (wTap == null) wTap = new WTapSettings();
+        wTap.sanitize();
+        if (shieldBreak == null) shieldBreak = new ShieldBreakSettings();
+        shieldBreak.sanitize();
+        if (silentAim == null) silentAim = new SilentAimSettings();
+        silentAim.sanitize();
+        if (aimAssist == null) aimAssist = new AimAssistSettings();
+        aimAssist.sanitize();
+        if (autoMace == null) autoMace = new AutoMaceSettings();
+        autoMace.sanitize();
         accent &= 0xFFFFFF;
     }
 
@@ -55,6 +99,10 @@ public final class ModConfig {
         return switch (type) {
             case GEODE, ACTIVITY -> chunks;
             case SPAWNER -> spawners;
+            case ORE_COAL, ORE_COPPER, ORE_IRON, ORE_GOLD, ORE_REDSTONE,
+                    ORE_LAPIS, ORE_DIAMOND, ORE_EMERALD, ORE_QUARTZ, ORE_ANCIENT_DEBRIS -> ores;
+            case PLAYER -> players;
+            case END_CRYSTAL -> crystals;
             default -> storage;
         };
     }

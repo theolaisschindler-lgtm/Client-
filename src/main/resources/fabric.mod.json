@@ -3,7 +3,7 @@
   "id": "amethyst",
   "version": "${version}",
   "name": "Amethyst",
-  "description": "A violet client dashboard with storage and spawner outlines, Chunk Finder, and Freecam.",
+  "description": "A violet client dashboard with configurable block, ore, player and crystal ESP, Chunk Finder alerts, Freecam, and PvP modules.",
   "authors": ["Amethyst contributors"],
   "license": "MIT",
   "environment": "client",
