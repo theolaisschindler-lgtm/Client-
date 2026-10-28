@@ -3,6 +3,7 @@ package dev.amethyst.client;
 import com.mojang.blaze3d.platform.InputConstants;
 import dev.amethyst.client.config.ModConfig;
 import dev.amethyst.client.gui.ClickGuiScreen;
+import dev.amethyst.client.gui.effects.GuiEffects;
 import dev.amethyst.client.freecam.FreecamController;
 import dev.amethyst.client.render.HighlightRenderer;
 import dev.amethyst.client.scan.BlockScanner;
@@ -33,6 +34,7 @@ public final class AmethystClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         config = ModConfig.load(FabricLoader.getInstance().getConfigDir().resolve("amethyst.json"));
+        GuiEffects.initialize();
         var category = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("amethyst", "client"));
         KeyMapping openGui = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 "key.amethyst.open_gui", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_RIGHT_SHIFT, category));

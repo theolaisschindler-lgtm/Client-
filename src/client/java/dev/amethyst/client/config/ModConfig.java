@@ -18,6 +18,7 @@ public final class ModConfig {
     public ModuleSettings spawners = ModuleSettings.spawnerDefaults();
     public ChunkFinderSettings chunks = new ChunkFinderSettings();
     public FreecamSettings freecam = new FreecamSettings();
+    public GuiEffectSettings guiEffects = new GuiEffectSettings();
     public int accent = 0x9B7CFF;
     private transient Path path;
 
@@ -45,6 +46,8 @@ public final class ModConfig {
         chunks.sanitize();
         if (freecam == null) freecam = new FreecamSettings();
         freecam.sanitize();
+        if (guiEffects == null) guiEffects = new GuiEffectSettings();
+        guiEffects.sanitize();
         accent &= 0xFFFFFF;
     }
 

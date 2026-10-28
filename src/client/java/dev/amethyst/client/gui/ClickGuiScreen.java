@@ -4,6 +4,7 @@ import dev.amethyst.client.AmethystClient;
 import dev.amethyst.client.config.ModConfig;
 import dev.amethyst.client.config.ModuleSettings;
 import dev.amethyst.client.config.TargetType;
+import dev.amethyst.client.gui.effects.GuiEffects;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
@@ -41,6 +42,14 @@ public final class ClickGuiScreen extends Screen {
     }
 
     @Override
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+        // Screen calls this before render(); schedule the native blur exactly once,
+        // before the panel and all controls. Respect Minecraft's menu blur setting.
+        if (config.guiEffects.blur) renderBlurredBackground(graphics);
+        minecraft.gui.renderDeferredSubtitles();
+    }
+
+    @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float delta) {
         this.mouseX = mouseX;
         this.mouseY = mouseY;
@@ -54,6 +63,7 @@ public final class ClickGuiScreen extends Screen {
         int side = compact ? 42 : 145;
         round(g, x - 4, y - 2, w + 8, h + 8, 10, 0x42000000);
         round(g, x, y, w, h, 8, BACKGROUND);
+        GuiEffects.render(g, x, y, w, h, config.accent, config.guiEffects);
         round(g, x, y, side, h, 8, SIDEBAR);
         g.fill(x + side - 8, y, x + side, y + h, SIDEBAR);
         g.fill(x + side, y + 1, x + side + 1, y + h - 1, BORDER);
@@ -115,7 +125,7 @@ public final class ClickGuiScreen extends Screen {
         diamond(g, x + 21, y + 24, 5, accent());
         if (!compact) {
             text(g, "AMETHYST", x + 39, y + 16, TEXT);
-            text(g, "Visual client / 1.2", x + 39, y + 28, MUTED);
+            text(g, "Visual client / 1.3", x + 39, y + 28, MUTED);
             if (h >= 230) text(g, "WORKSPACE", x + 13, y + 63, 0xFF625B70);
         }
         int navY = h < 230 ? 55 : 85;
@@ -341,6 +351,18 @@ public final class ClickGuiScreen extends Screen {
         yy = slider(g, x, yy, w, "Accent green", Integer.toString((config.accent >> 8) & 255), (config.accent >> 8) & 255, 0, 255, value -> setAccent(8, value));
         yy = slider(g, x, yy, w, "Accent blue", Integer.toString(config.accent & 255), config.accent & 255, 0, 255, value -> setAccent(0, value));
         yy += 12;
+        yy = section(g, "GUI SHADERS", x, yy, w);
+        yy = switchRow(g, x, yy, w, "Background blur", config.guiEffects.blur,
+                () -> config.guiEffects.blur = !config.guiEffects.blur);
+        yy = paragraph(g, "Blur strength follows Minecraft's menu background blur setting.", x, yy, w, MUTED);
+        yy = switchRow(g, x, yy, w, "Accent glow", config.guiEffects.glow,
+                () -> config.guiEffects.glow = !config.guiEffects.glow);
+        yy = switchRow(g, x, yy, w, "Animate glow", config.guiEffects.animations,
+                () -> config.guiEffects.animations = !config.guiEffects.animations);
+        yy = slider(g, x, yy + 5, w, "Glow intensity", Math.round(config.guiEffects.glowIntensity * 100) + "%",
+                config.guiEffects.glowIntensity, 0, 1, value -> config.guiEffects.glowIntensity = value);
+        yy = paragraph(g, "Effects apply only to this menu. Disable glow or animations for a simpler view.", x, yy, w, MUTED);
+        yy += 8;
         yy = section(g, "THE DETAILS", x, yy, w);
         text(g, "Right Shift opens this workspace.", x, yy, TEXT);
         text(g, "Change the key in Minecraft's Controls menu.", x, yy + 17, MUTED);

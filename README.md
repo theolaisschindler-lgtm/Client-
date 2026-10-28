@@ -10,8 +10,11 @@ A Fabric **client mod for Minecraft Java 1.21.11** with a dark, violet click GUI
 - **Freecam:** a detached, no-clip camera with adjustable speed and sprint boost. Toggle it under Visuals or with **F6** (rebindable in Controls).
 - Individual target colors, RGB controls, opacity, distance (16–256 blocks), line width (1–5), through-wall rendering, rainbow colors, and pulsing outlines.
 - Settings persist in `config/amethyst.json` inside your Minecraft instance.
+- **GUI shaders:** an animated accent-colored aura and a soft window glow, with native background blur. Toggle blur, glow, and animation and adjust glow intensity under **Appearance → GUI Shaders**. No external shader pack is required.
 
 Press **Right Shift** in-game to open the GUI. The binding can be changed under **Options → Controls → Key Binds**. Enable a module, select the block types you want, and adjust its appearance in the settings panel. Close the GUI to save your changes.
+
+The background blur uses Minecraft's **Menu Background Blur** strength setting and respects zero/off there. The aura uses a dedicated GLSL shader, follows the interface accent color, and runs only while the Amethyst GUI is open. Turning animations off freezes the effect; disabling glow skips its draw entirely. Other screens and the world's shaders are unchanged.
 
 The mod reads blocks the client already knows about. It does not load distant chunks, search world seeds, or discover blocks the server has withheld. Use it only where the server's rules allow it.
 
@@ -53,6 +56,15 @@ Configuration and persistence tests can also run independently of Minecraft down
 ```sh
 ./gradlew -p config-tests test
 ```
+
+On a development machine with EGL/OpenGL support, the optional shader check compiles and renders the actual GLSL at wide and compact sizes and verifies intensity, animation, static mode, accent color, and halo bounds:
+
+```sh
+python -m pip install moderngl==5.12.0
+python tools/validate_gui_shader.py
+```
+
+This is a standalone shader check; it does not replace checking the complete GUI in Minecraft.
 
 In this cloud instance, select the installed full JDK with `export JAVA_HOME=/workspace/.toolchains/jdk-21.0.9+10`.
 Java needs explicit proxy and CA settings here. Add these arguments to Gradle commands:
