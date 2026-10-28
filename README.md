@@ -7,6 +7,7 @@ A Fabric **client mod for Minecraft Java 1.21.11** with a dark, violet click GUI
 - **Storage ESP:** configurable outlines for chests (including trapped and ender chests), hoppers, and shulker boxes. Barrels can be enabled separately.
 - **Spawner Finder:** configurable outlines for spawners in loaded chunks.
 - **Chunk Finder:** surveys loaded chunks for amethyst/calcite geode candidates and combinations of possible activity clues. Outlines mark the 16×16×16 chunk section containing a representative clue. Geodes and activity use separate configurable colors.
+- **Freecam:** a detached, no-clip camera with adjustable speed and sprint boost. Toggle it under Visuals or with **F6** (rebindable in Controls).
 - Individual target colors, RGB controls, opacity, distance (16–256 blocks), line width (1–5), through-wall rendering, rainbow colors, and pulsing outlines.
 - Settings persist in `config/amethyst.json` inside your Minecraft instance.
 
@@ -23,6 +24,12 @@ Select **Visuals → Chunk Finder** and enable the module. It starts disabled, s
 - **Geodes / Activity clues:** independent target switches and RGB colors, plus the existing opacity, width, through-wall, rainbow, and pulse options.
 
 Surveying is incremental, so signals can take time to appear and update, especially at larger distances. The inspector shows survey progress. Natural structures, including villages, can match the activity heuristics; a candidate is not proof of a player base. The scan does not detect chunk age, ownership, or players themselves.
+
+### Freecam
+
+Select **Visuals → Freecam** or press **F6** in-game to detach the camera. Use your configured movement keys (normally **WASD**), **Jump** to rise, **Sneak** to descend, and **Sprint** for the adjustable boost. Look around with the mouse. Speed is measured in blocks per tick (20 ticks per second). Camera movement pauses while a GUI or chat is open.
+
+Your real player stays in the world, with its movement controls suppressed. Gravity, server corrections, and damage still apply to the body. Camera movement does not teleport the player, request distant chunks, or let you interact with blocks from the detached camera. Disable Freecam to return to the player's current location and restore your previous perspective. It resets on death, respawn, world/dimension changes, and disconnect, and never activates automatically after restarting the game. Dismount vehicles before enabling it. Speed and boost preferences are saved normally.
 
 ## Install
 
@@ -71,6 +78,7 @@ The development client uses a separate `run/` instance. A successful build does 
 5. Close and reopen the GUI, then restart the client, to confirm settings persist. Break a highlighted block and leave the area to check stale outlines disappear.
 6. Enable Chunk Finder. In separate chunks place an amethyst/calcite cluster, torches alone, and a combination of torches, crafting tables, beds, and redstone. Wait for the survey; confirm the geode and activity categories have distinct section outlines and lone torches do not count as activity.
 7. Compare sensitivity1 and100 with a weak combination (one torch and one crafting table). Change simulation distance, disable each target, unload a candidate chunk, and change dimensions; confirm old outlines clear. Check the controls and persistence in both wide and compact GUI layouts.
+8. Toggle Freecam with F6 and in the GUI. Fly in every direction, look up/down, test sprint boost and passage through walls. Check that your body does not follow the camera or receive its rotation. Open chat/the GUI and confirm camera movement pauses. Return to the body from each perspective and check death, respawn, dimension change, and disconnect cleanup. Verify block attacks/use are suppressed while detached and work again after disabling.
 
 ## Cloud network requirements
 

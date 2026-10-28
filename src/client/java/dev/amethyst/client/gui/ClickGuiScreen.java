@@ -26,8 +26,7 @@ public final class ClickGuiScreen extends Screen {
     private static final int MUTED = 0xFF918A9F;
     private final ModConfig config = AmethystClient.config();
     private final List<Hit> hits = new ArrayList<>();
-    private boolean storageSelected = true;
-    private boolean chunkSelected;
+    private int selectedModule;
     private boolean appearance;
     private TargetType selectedColor = TargetType.CHEST;
     private Hit dragging;
@@ -64,8 +63,8 @@ public final class ClickGuiScreen extends Screen {
         int available = w - side - 30;
         text(g, appearance ? "Appearance" : "Visuals", left, y + 18, TEXT);
         if (available > 280) text(g, appearance ? "Make your client feel like you." : "A little clarity. A different perspective.", left, y + 33, MUTED);
-        int enabled = (config.storage.enabled ? 1 : 0) + (config.spawners.enabled ? 1 : 0) + (config.chunks.enabled ? 1 : 0);
-        if (available > 360) pill(g, left + available - 108, y + 15, 80, 18, enabled + " / 3 active", 0xFF24202F, accent());
+        int enabled = (config.storage.enabled ? 1 : 0) + (config.spawners.enabled ? 1 : 0) + (config.chunks.enabled ? 1 : 0) + (config.freecam.enabled ? 1 : 0);
+        if (available > 360) pill(g, left + available - 108, y + 15, 80, 18, enabled + " / 4 active", 0xFF24202F, accent());
         button(g, x + w - 28, y + 11, 20, 20, "×", this::onClose, false);
         g.fill(left, y + 52, left + available, y + 53, BORDER);
 
@@ -76,28 +75,26 @@ public final class ClickGuiScreen extends Screen {
             viewportH = h - 88;
             settingsViewport(g, true);
         } else {
-            boolean columns = available >= 500 && h >= 330;
+            boolean columns = available >= 500 && h >= 400;
             int listW = columns ? 200 : available;
             if (columns) {
                 text(g, "MODULES", left, y + 65, MUTED);
-                text(g, "03", left + listW - 13, y + 65, MUTED);
-                int cardHeight = Math.clamp((h - 135) / 3, 64, 110);
-                moduleCard(g, left, y + 85, listW, cardHeight, 0);
-                moduleCard(g, left, y + 85 + cardHeight + 8, listW, cardHeight, 1);
-                moduleCard(g, left, y + 85 + 2 * (cardHeight + 8), listW, cardHeight, 2);
-                if (h > 500) {
-                    text(g, "LOCAL & CLIENT-SIDE", left + 10, y + h - 58, accent());
-                    text(g, "Only loaded chunks are scanned.", left + 10, y + h - 41, MUTED);
-                }
+                text(g, "04", left + listW - 13, y + 65, MUTED);
+                int cardHeight = Math.clamp((h - 140) / 4, 64, 96);
+                for (int index = 0; index < 4; index++)
+                    moduleCard(g, left, y + 85 + index * (cardHeight + 8), listW, cardHeight, index);
                 viewportX = left + listW + 14;
                 viewportY = y + 64;
                 viewportW = available - listW - 14;
                 viewportH = h - 88;
             } else {
-                int tabWidth = (available - 12) / 3;
-                button(g, left, y + 62, tabWidth, 25, "Storage", () -> selectModule(true), !chunkSelected && storageSelected);
-                button(g, left + tabWidth + 6, y + 62, tabWidth, 25, "Spawners", () -> selectModule(false), !chunkSelected && !storageSelected);
-                button(g, left + 2 * (tabWidth + 6), y + 62, tabWidth, 25, "Chunks", this::selectChunks, chunkSelected);
+                int tabWidth = (available - 18) / 4;
+                String[] tabs = {"Storage", tabWidth < 62 ? "Spawn" : "Spawners", "Chunks", "Freecam"};
+                for (int index = 0; index < tabs.length; index++) {
+                    int module = index;
+                    button(g, left + index * (tabWidth + 6), y + 62, tabWidth, 25,
+                            tabs[index], () -> selectModule(module), selectedModule == module);
+                }
                 viewportX = left;
                 viewportY = y + 97;
                 viewportW = available;
@@ -118,7 +115,7 @@ public final class ClickGuiScreen extends Screen {
         diamond(g, x + 21, y + 24, 5, accent());
         if (!compact) {
             text(g, "AMETHYST", x + 39, y + 16, TEXT);
-            text(g, "Visual client / 1.1", x + 39, y + 28, MUTED);
+            text(g, "Visual client / 1.2", x + 39, y + 28, MUTED);
             if (h >= 230) text(g, "WORKSPACE", x + 13, y + 63, 0xFF625B70);
         }
         int navY = h < 230 ? 55 : 85;
@@ -146,11 +143,20 @@ public final class ClickGuiScreen extends Screen {
     }
 
     private void moduleCard(GuiGraphics g, int x, int y, int w, int h, int index) {
-        ModuleSettings module = index == 0 ? config.storage : index == 1 ? config.spawners : config.chunks;
-        boolean selected = index == 2 ? chunkSelected : !chunkSelected && storageSelected == (index == 0);
-        String name = index == 0 ? "Storage ESP" : index == 1 ? "Spawner Finder" : "Chunk Finder";
-        String category = index == 0 ? "WORLD / STORAGE" : index == 1 ? "WORLD / DISCOVERY" : "WORLD / CHUNKS";
-        String description = index == 0 ? "Your supplies, in plain sight." : index == 1 ? "Find what lies underneath." : "Geodes & activity clues.";
+        boolean enabled = moduleEnabled(index);
+        boolean selected = selectedModule == index;
+        String name = switch (index) {
+            case 0 -> "Storage ESP";
+            case 1 -> "Spawner Finder";
+            case 2 -> "Chunk Finder";
+            default -> "Freecam";
+        };
+        String category = switch (index) {
+            case 0 -> "WORLD / STORAGE";
+            case 1 -> "WORLD / DISCOVERY";
+            case 2 -> "WORLD / CHUNKS";
+            default -> "CAMERA / FREE FLIGHT";
+        };
         round(g, x, y, w, h, 6, selected ? 0xFF221C30 : hover(x, y, w, h) ? 0xFF201C2A : CARD);
         if (selected) {
             outline(g, x, y, w, h, 0xFF57416E);
@@ -160,29 +166,39 @@ public final class ClickGuiScreen extends Screen {
         if (index == 2) {
             diamond(g, x + 25, y + 25, 6, accent());
             outline(g, x + 16, y + 16, 18, 18, 0xFF66537D);
+        } else if (index == 3) {
+            outline(g, x + 16, y + 20, 13, 10, accent());
+            g.fill(x + 29, y + 23, x + 34, y + 28, accent());
         } else boxIcon(g, x + 17, y + 18, 15, accent());
         text(g, name, x + 47, y + 17, TEXT);
         if (h >= 90) text(g, category, x + 12, y + 49, MUTED);
-        if (h >= 105) text(g, description, x + 12, y + 65, 0xFFB0A8BC);
-        pill(g, x + 12, y + h - 25, 52, 14, module.enabled ? "ENABLED" : "DISABLED", 0xFF16121F, module.enabled ? accent() : MUTED);
+        pill(g, x + 12, y + h - 25, 52, 14, enabled ? "ENABLED" : "DISABLED", 0xFF16121F, enabled ? accent() : MUTED);
         text(g, "Configure  ›", x + w - 74, y + h - 21, selected ? accent() : MUTED);
-        hit(x, y, w, h, () -> { if (index == 2) selectChunks(); else selectModule(index == 0); });
-        toggle(g, x + w - 38, y + 15, module.enabled, () -> module.enabled = !module.enabled, false);
+        hit(x, y, w, h, () -> selectModule(index));
+        toggle(g, x + w - 38, y + 15, enabled, () -> toggleModule(index), false);
     }
 
-    private void selectModule(boolean storage) {
-        chunkSelected = false;
-        storageSelected = storage;
-        selectedColor = storage ? TargetType.CHEST : TargetType.SPAWNER;
-        scroll = 0;
-        maxScroll = 0;
-        dragging = null;
-        focused = -1;
+    private boolean moduleEnabled(int index) {
+        return switch (index) {
+            case 0 -> config.storage.enabled;
+            case 1 -> config.spawners.enabled;
+            case 2 -> config.chunks.enabled;
+            default -> config.freecam.enabled;
+        };
     }
 
-    private void selectChunks() {
-        chunkSelected = true;
-        selectedColor = TargetType.GEODE;
+    private void toggleModule(int index) {
+        switch (index) {
+            case 0 -> config.storage.enabled = !config.storage.enabled;
+            case 1 -> config.spawners.enabled = !config.spawners.enabled;
+            case 2 -> config.chunks.enabled = !config.chunks.enabled;
+            default -> config.freecam.enabled = !config.freecam.enabled;
+        }
+    }
+
+    private void selectModule(int module) {
+        selectedModule = module;
+        selectedColor = module == 0 ? TargetType.CHEST : module == 1 ? TargetType.SPAWNER : TargetType.GEODE;
         scroll = 0;
         maxScroll = 0;
         dragging = null;
@@ -205,6 +221,9 @@ public final class ClickGuiScreen extends Screen {
     }
 
     private int moduleSettings(GuiGraphics g, int x, int y, int w) {
+        if (selectedModule == 3) return freecamSettings(g, x, y, w);
+        boolean chunkSelected = selectedModule == 2;
+        boolean storageSelected = selectedModule == 0;
         ModuleSettings module = chunkSelected ? config.chunks : storageSelected ? config.storage : config.spawners;
         text(g, "MODULE SETTINGS", x, y + 2, MUTED);
         text(g, chunkSelected ? "Chunk Finder" : storageSelected ? "Storage ESP" : "Spawner Finder", x, y + 22, TEXT);
@@ -275,6 +294,32 @@ public final class ClickGuiScreen extends Screen {
         }
         text(g, "Only blocks received from the server appear.", x, yy, MUTED);
         return yy + 15;
+    }
+
+    private int freecamSettings(GuiGraphics g, int x, int y, int w) {
+        text(g, "MODULE SETTINGS", x, y + 2, MUTED);
+        text(g, "Freecam", x, y + 22, TEXT);
+        toggle(g, x + w - 28, y + 18, config.freecam.enabled,
+                () -> config.freecam.enabled = !config.freecam.enabled, true);
+        text(g, "A different point of view.", x, y + 38, MUTED);
+        int yy = section(g, "FREE FLIGHT", x, y + 61, w);
+        yy = slider(g, x, yy, w, "Movement speed",
+                String.format(Locale.ROOT, "%.2f blocks/tick", config.freecam.speed),
+                config.freecam.speed, 0.1, 3.0, value -> config.freecam.speed = Math.round(value * 100) / 100.0);
+        yy = slider(g, x, yy, w, "Sprint boost",
+                String.format(Locale.ROOT, "%.1f x", config.freecam.boostMultiplier),
+                config.freecam.boostMultiplier, 1.0, 5.0,
+                value -> config.freecam.boostMultiplier = Math.round(value * 10) / 10.0);
+        yy += 8;
+        yy = section(g, "CONTROLS", x, yy, w);
+        yy = paragraph(g, "Use your movement keys to fly. Jump goes up; Sneak goes down. Hold Sprint to boost.", x, yy, w, TEXT);
+        yy = paragraph(g, "F6 toggles Freecam. Rebind it in Minecraft's Controls menu.", x, yy, w, MUTED);
+        yy = paragraph(g, "Close this menu to move the camera. Camera movement pauses while a screen is open.", x, yy, w, MUTED);
+        yy += 8;
+        yy = section(g, "CAMERA SESSION", x, yy, w);
+        yy = paragraph(g, "Your body remains in the world and can still take damage or move with gravity. Disable Freecam to return to it.", x, yy, w, MUTED);
+        yy = paragraph(g, "Freecam starts off each session. Speed and boost are saved automatically.", x, yy, w, MUTED);
+        return yy + 8;
     }
 
     private int appearanceSettings(GuiGraphics g, int x, int y, int w) {
@@ -448,7 +493,8 @@ public final class ClickGuiScreen extends Screen {
                 return true;
             }
             if (hit.slider != null && (event.key() == GLFW.GLFW_KEY_LEFT || event.key() == GLFW.GLFW_KEY_RIGHT)) {
-                double step = hit.max == 5 ? 0.25 : hit.max >= 16 ? 1 : 0.01;
+                double step = selectedModule == 3 && !appearance ? (hit.max == 5 ? 0.1 : 0.05)
+                        : hit.max == 5 ? 0.25 : hit.max >= 16 ? 1 : 0.01;
                 hit.slider.accept(Math.max(hit.min, Math.min(hit.max, hit.value + (event.key() == GLFW.GLFW_KEY_RIGHT ? step : -step))));
                 return true;
             }

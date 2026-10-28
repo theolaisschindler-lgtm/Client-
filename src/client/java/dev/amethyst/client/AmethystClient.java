@@ -3,6 +3,7 @@ package dev.amethyst.client;
 import com.mojang.blaze3d.platform.InputConstants;
 import dev.amethyst.client.config.ModConfig;
 import dev.amethyst.client.gui.ClickGuiScreen;
+import dev.amethyst.client.freecam.FreecamController;
 import dev.amethyst.client.render.HighlightRenderer;
 import dev.amethyst.client.scan.BlockScanner;
 import dev.amethyst.client.scan.ChunkScanner;
@@ -35,14 +36,25 @@ public final class AmethystClient implements ClientModInitializer {
         var category = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("amethyst", "client"));
         KeyMapping openGui = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 "key.amethyst.open_gui", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_RIGHT_SHIFT, category));
+        KeyMapping toggleFreecam = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+                "key.amethyst.toggle_freecam", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F6, category));
         HighlightRenderer.register();
+        FreecamController.register();
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (openGui.consumeClick()) {
                 if (client.screen == null) client.setScreen(new ClickGuiScreen());
             }
+            while (toggleFreecam.consumeClick()) {
+                if (client.screen == null && client.level != null && client.player != null) {
+                    config.freecam.enabled = !config.freecam.enabled;
+                }
+            }
             SCANNER.tick(client, config);
             CHUNKS.tick(client, config.chunks);
         });
-        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> config.save());
+        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> {
+            FreecamController.disable();
+            config.save();
+        });
     }
 }

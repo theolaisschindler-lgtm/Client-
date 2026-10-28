@@ -1,4 +1,5 @@
 {
   "key.category.amethyst.client": "Amethyst",
-  "key.amethyst.open_gui": "Open Amethyst"
+  "key.amethyst.open_gui": "Open Amethyst",
+  "key.amethyst.toggle_freecam": "Toggle Freecam"
 }

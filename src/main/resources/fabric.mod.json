@@ -3,11 +3,12 @@
   "id": "amethyst",
   "version": "${version}",
   "name": "Amethyst",
-  "description": "A violet client dashboard with customizable storage and spawner outlines.",
+  "description": "A violet client dashboard with storage and spawner outlines, Chunk Finder, and Freecam.",
   "authors": ["Amethyst contributors"],
   "license": "MIT",
   "environment": "client",
   "entrypoints": { "client": ["dev.amethyst.client.AmethystClient"] },
+  "mixins": ["amethyst.client.mixins.json"],
   "depends": {
     "fabricloader": ">=0.18.2",
     "minecraft": "~1.21.11",

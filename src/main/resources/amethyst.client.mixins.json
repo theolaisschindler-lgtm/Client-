@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "dev.amethyst.client.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "GameRendererMixin",
+    "KeyboardInputMixin",
+    "LocalPlayerMixin",
+    "MinecraftMixin",
+    "MouseHandlerMixin"
+  ],
+  "injectors": { "defaultRequire": 1 }
+}
