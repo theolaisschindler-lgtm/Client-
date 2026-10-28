@@ -8,14 +8,13 @@ import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.player.RemotePlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.phys.Vec3;
 
 /** A local-only camera entity. The real player's simulation and networking remain vanilla. */
 public final class FreecamController {
-    private static RemotePlayer camera;
+    private static FreecamCamera camera;
     private static LocalPlayer body;
     private static ClientLevel world;
     private static Entity previousCamera;
@@ -57,7 +56,7 @@ public final class FreecamController {
         world = client.level;
         previousCamera = client.getCameraEntity();
         previousPerspective = client.options.getCameraType();
-        camera = new RemotePlayer(world, body.getGameProfile());
+        camera = new FreecamCamera(world, body.getGameProfile());
         camera.copyPosition(body);
         // Starting eyes coincide even if the player is crouching, swimming, or sleeping.
         camera.setPos(body.getX(), body.getEyeY() - camera.getEyeHeight(), body.getZ());
